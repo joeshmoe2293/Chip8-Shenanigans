@@ -1,0 +1,59 @@
+﻿###########################################
+#
+#  Tank
+#
+#  Classic Chip8 program translated from
+#  VIPer Volume 1 Issue 1 (June 1978), pg 12-14
+#  https://github.com/mattmikolay/viper/blob/master/volume1/issue1.pdf
+#
+#  Press 2/E/S/Q to move the tank.
+#
+###########################################
+
+: tankup
+  0x10 0x54 0x7c 0x6c 0x7c 0x7c 
+: tankdown
+  0x44 0x7c 0x7c 0x6c 0x7c 0x54 0x10 
+: tankright
+  0x0 0xfc 0x78 0x6e 0x78 0xfc
+: tankleft
+  0x0 0x3f 0x1e 0x76 0x1e 0x3f 0x0
+
+: draw  sprite v1 v2 7 ;
+: delay_x
+	v0 := 0x3C
+	delay := v0
+	loop
+		v0 := delay
+		if v0 == 0 then
+	again
+	;
+: up    draw v2 += -1  i := tankup    draw delay_x ;
+: down  draw v2 +=  1  i := tankdown  draw delay_x ;
+: right draw v1 +=  1  i := tankright draw delay_x ;
+: left  draw v1 += -1  i := tankleft  draw delay_x ;
+
+: main
+  v1 := 0x20
+  v2 := 0x10
+  i := tankup
+	draw
+	loop
+		v0 := 5
+		if v0 key then up
+		v0 := 9
+		if v0 key then right
+		v0 := 7
+		if v0 key then left
+		v0 := 8
+		if v0 key then down
+	again
+#  loop
+#    sprite v1 v2 7
+#    v0 := key
+#    sprite v1 v2 7
+#    if v0 == 5 then up
+#    if v0 == 9 then right
+#    if v0 == 7 then left
+#    if v0 == 8 then down
+#  again

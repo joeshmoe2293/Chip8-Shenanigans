@@ -22,16 +22,7 @@ def pretty_print(prog, print_hex):
             instruction = (f'0x{split_instr[0]} 0x{split_instr[1]}', instruction[1])
         print(f'{i*2 + 0x200:04X}: {" ".join(instruction)}')
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Strip Chip8 ASM from file')
-    parser.add_argument('file', type=str, help='ch8 file')
-    parser.add_argument('-pp', '--pretty-print', dest='pp', action='store_const', const=True, default=False)
-    parser.add_argument('-x', '--hex-print', dest='hex', action='store_const', const=True, default=False)
-    args = parser.parse_args()
-
-    with open(args.file, 'r') as f:
-        data = f.read()
-
+def parse_8mct(data):
     out_prog = []
     asm_regex = re.compile(r'^([\dA-Fa-f]{2} ?[\dA-Fa-fxX]{2})(?:\s*(#.*)){0,1}$')
     for line in data.split('\n'):
@@ -43,3 +34,16 @@ if __name__ == '__main__':
         pretty_print(out_prog, args.hex)
     else:
         print_raw(out_prog, args.hex)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Strip Chip8 ASM from file')
+    parser.add_argument('file', type=str, help='ch8 file')
+    parser.add_argument('-pp', '--pretty-print', dest='pp', action='store_const', const=True, default=False)
+    parser.add_argument('-x', '--hex-print', dest='hex', action='store_const', const=True, default=False)
+    args = parser.parse_args()
+
+    with open(args.file, 'r') as f:
+        data = f.read()
+
+    if args.file.endswith('.8mct'):
+        parse_8mct(data)
