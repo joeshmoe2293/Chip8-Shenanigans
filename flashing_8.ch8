@@ -1,0 +1,31 @@
+# Load sprite for character '8'
+62 08 # sprite = 8
+F2 29 # I  = addr(sprite)
+
+# Zero out x and y coords
+61 00 # p_y = 0
+60 00 # p_x = 0
+
+# Draw to screen
+D0 15 # draw with x from v0, y from v1, 5 byte sprite
+
+# Delay to maintain framerate
+62 04 # set delay
+F2 15 # delay_ctr = delay
+F2 07 # curr_delay = delay_ctr
+32 00 # skip next if curr_delay = 0
+12 0E # jump two lines previous to reload (busy loop)
+
+# Draw to screen again to erase
+D0 15 # draw sprite
+70 04 # p_x += 4
+
+# Check if we need to move down a line
+30 3C # skip next if p_x = 0x3C = 60 (far right of screen)
+12 08 # jump to draw to screen
+
+# Increment y, check if we need to go back to top left
+71 04 # p_y += 4
+31 1C # skip next if p_y = 0x1C = 28 (bottom of screen)
+12 06 # jump to zeroing out x coord
+12 04 # jump to zeroing out y coordinate
