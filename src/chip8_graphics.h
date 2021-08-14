@@ -9,6 +9,7 @@ void graphics_refresh_screen(void);
 void graphics_clear_screen(void);
 void graphics_draw_sprite(uint8_t row, uint8_t col,
                           uint8_t *sprite, uint8_t num_bytes);
+void graphics_draw_startup(void);
 void graphics_deinit(void);
 
 #endif
