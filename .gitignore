@@ -1,0 +1,9 @@
+# No VIM swap file
+*.swp
+
+# No python files
+*.pyc
+
+# No object files
+*.o
+build/
