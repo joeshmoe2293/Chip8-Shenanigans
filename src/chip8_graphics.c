@@ -54,15 +54,24 @@ void graphics_draw_sprite(uint8_t row, uint8_t col,
                           uint8_t *sprite, uint8_t num_bytes)
 {
     row = util_constrain(row, ROW_COUNT);
-    col = util_constrain(col, ROW_COUNT);
+    col = util_constrain(col, COL_COUNT);
 
     for (int r = 0; r < num_bytes; r++) {
+        if (sprite[r] == 0x00) {
+            // No pixels to draw, can skip
+            continue;
+        }
+
         // 8 bits per row
         for (int c = 0; c < 8; c++) {
             // Check bits from left to right (high to low)
             if (sprite[r] & (1 << (7 - c))) {
                 graphics_toggle_pixel(util_constrain(row + r, ROW_COUNT),
                                       util_constrain(col + c, COL_COUNT));
+
+#if 1
+                graphics_refresh_screen();
+#endif
             }
         }
     }

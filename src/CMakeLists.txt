@@ -13,7 +13,11 @@ add_library(chip8_graphics chip8_graphics.c)
 target_include_directories(chip8_graphics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(chip8_graphics ${CURSES_LIBRARIES})
 
-# add the executable
+# add executables
 add_executable(test test.c)
 target_link_libraries(test ${CURSES_LIBRARIES} chip8_util chip8_graphics)
 target_compile_options(test PRIVATE -Wall -Wextra -pedantic -Werror)
+
+add_executable(test2 test2.c)
+target_link_libraries(test2 ${CURSES_LIBRARIES} chip8_util chip8_graphics)
+target_compile_options(test2 PRIVATE -Wall -Wextra -pedantic -Werror)
