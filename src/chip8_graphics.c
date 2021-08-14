@@ -26,6 +26,8 @@ void graphics_init(void)
     keypad(stdscr, TRUE);
     noecho();
     curs_set(0);
+
+    memset(screen, 0, sizeof(screen));
 }
 
 void graphics_toggle_pixel(uint8_t row, uint8_t col)
