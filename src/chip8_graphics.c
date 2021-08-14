@@ -69,7 +69,7 @@ void graphics_draw_sprite(uint8_t row, uint8_t col,
                 graphics_toggle_pixel(util_constrain(row + r, ROW_COUNT),
                                       util_constrain(col + c, COL_COUNT));
 
-#if 1
+#if defined(SPRITE_DEBUG)
                 graphics_refresh_screen();
 #endif
             }
