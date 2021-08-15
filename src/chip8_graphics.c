@@ -54,9 +54,10 @@ void graphics_clear_screen(void)
     graphics_refresh_screen();
 }
 
-void graphics_draw_sprite(uint8_t row, uint8_t col,
+bool graphics_draw_sprite(uint8_t row, uint8_t col,
                           uint8_t *sprite, uint8_t num_bytes)
 {
+    bool pixels_flipped = false;
     row = util_constrain(row, ROW_COUNT);
     col = util_constrain(col, COL_COUNT);
 
@@ -70,8 +71,13 @@ void graphics_draw_sprite(uint8_t row, uint8_t col,
         for (int c = 0; c < 8; c++) {
             // Check bits from left to right (high to low)
             if (sprite[r] & (1 << (7 - c))) {
-                graphics_toggle_pixel(util_constrain(row + r, ROW_COUNT),
-                                      util_constrain(col + c, COL_COUNT));
+                uint8_t r_const = util_constrain(row + r, ROW_COUNT);
+                uint8_t c_const = util_constrain(col + c, COL_COUNT);
+                graphics_toggle_pixel(r_const, c_const);
+
+                if (screen[r_const][c_const] == 0) {
+                    pixels_flipped = true;
+                }
 
 #if defined(SPRITE_DEBUG)
                 graphics_refresh_screen();
@@ -79,6 +85,8 @@ void graphics_draw_sprite(uint8_t row, uint8_t col,
             }
         }
     }
+
+    return pixels_flipped;
 }
 
 void graphics_draw_startup(void)

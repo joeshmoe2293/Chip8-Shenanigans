@@ -30,8 +30,16 @@ static uint8_t  SP;
 static bool     draw_flag;     
 
 // Keyboard
-static uint8_t key[NUM_KEYS];
+static bool key[NUM_KEYS];
 
+// Built-in sprite management
+static void setup_sprite_memory(void);
+static uint16_t get_sprite_for(uint8_t sprite_val);
+
+// Manage key inputs!
+static void update_key_input(void);
+
+// Handling various opcodes
 static void process_leading_0(void);
 static void process_leading_1(void);
 static void process_leading_2(void);
@@ -51,9 +59,6 @@ static void process_leading_F(void);
 
 void chip8_init(void)
 {
-    graphics_init();
-    graphics_draw_startup();
-
     // Memory
     memset(memory, 0, sizeof(memory));
     memset(stack, 0, sizeof(stack));
@@ -66,6 +71,10 @@ void chip8_init(void)
     PC = 0x200;
     opcode = 0;
     SP = 0;
+
+    setup_sprite_memory();
+    graphics_init();
+    graphics_draw_startup();
 }
 
 void chip8_load(const char *filename)
@@ -161,11 +170,76 @@ void chip8_emulate_cycle(void)
         draw_flag = 0;
         graphics_refresh_screen();
     }
+
+    update_key_input();
+}
+
+void chip8_update_timers(void)
+{
+    if (delay > 0) {
+        delay--;
+    }
+
+    if (sound > 0) {
+        sound--;
+    }
 }
 
 void chip8_deinit(void)
 {
     graphics_deinit();
+}
+
+static void setup_sprite_memory(void)
+{
+    // Ripped from
+    // https://multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
+    uint8_t chip8_fontset[80] =
+    { 
+        0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+        0x20, 0x60, 0x20, 0x20, 0x70, // 1
+        0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+        0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+        0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+        0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+        0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+        0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+        0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+        0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+        0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+        0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+        0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+        0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+        0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+        0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+    };
+
+    // Sprite memory ends at 0x50 = address 80
+    memcpy(memory, chip8_fontset, sizeof(chip8_fontset));
+}
+
+static uint16_t get_sprite_for(uint8_t sprite_val)
+{
+    if (sprite_val >= 0x10) {
+        printf("ERROR: Cannot access built in sprites for non-hex characters!\n");
+        return (uint16_t) -1;
+    }
+
+    return sprite_val * 5;
+}
+
+static void update_key_input(void)
+{
+    // 16 possible keys
+    for (uint8_t i = 0; i < 0x10; i++) {
+        if (util_is_hex_key_pressed(i, false)) {
+            key[i] = 1;
+            // Also consume key
+            util_get_char();
+        } else {
+            key[i] = 0;
+        }
+    }
 }
 
 static void process_leading_0(void)
@@ -315,35 +389,117 @@ static void process_leading_8(void)
 
 static void process_leading_9(void)
 {
-    
+    if (opcode & 0x000F != 0) {
+        printf("ERROR: Unrecognized opcode!\n");
+        return;
+    }
+
+    uint8_t reg1 = (opcode & 0x0F00) >> 8;
+    uint8_t reg2 = (opcode & 0x00F0) >> 4;
+    if (V[reg1] != V[reg2]) {
+        PC += 4;
+    } else {
+        PC += 2;
+    }
 }
 
 static void process_leading_A(void)
 {
-    
+    I = opcode & 0x0FFF;
+    PC += 2;
 }
 
 static void process_leading_B(void)
 {
-    
+    PC = V[0] + (opcode & 0x0FFF);
 }
 
 static void process_leading_C(void)
 {
-    
+    uint8_t reg = (opcode & 0x0F00) >> 8;
+    V[reg] = rand() & (opcode & 0x00FF);
+    PC += 2;
 }
 
 static void process_leading_D(void)
 {
-    
+    uint8_t reg1 = (opcode & 0x0F00) >> 8;
+    uint8_t reg2 = (opcode & 0x00F0) >> 4;
+    uint8_t n    = (opcode & 0x000F);
+    // V[F] set if pixels flipped, which is return value of draw_sprite
+    V[0xF] = graphics_draw_sprite(V[reg1], V[reg2], &memory[I], n);
+    draw_flag = 1;
+    PC += 2;
 }
 
 static void process_leading_E(void)
 {
-    
+    uint8_t reg = (opcode & 0x0F00) >> 8;
+
+    switch (opcode & 0x00FF) {
+        case 0x009E:
+            PC += 2;
+            if (key[V[reg]]) {
+                PC += 2;
+            }
+            break;
+        case 0x00A1:
+            PC += 2;
+            if (!key[V[reg]]) {
+                PC += 2;
+            }
+            break;
+        default:
+            printf("ERROR: Unrecognized opcode!\n");
+            break;
+    }
 }
 
 static void process_leading_F(void)
 {
-    
+    uint8_t reg = (opcode & 0x0F00) >> 8;
+
+    switch (opcode & 0x00FF) {
+        case 0x0007:
+            V[reg] = delay;
+            PC += 2;
+            break;
+        case 0x000A:
+            V[reg] = util_get_hex_key();
+            PC += 2;
+            break;
+        case 0x0015:
+            delay = V[reg];
+            PC += 2;
+            break;
+        case 0x0018:
+            sound = V[reg];
+            PC += 2;
+            break;
+        case 0x001E:
+            I += V[reg];
+            PC += 2;
+            break;
+        case 0x0029:
+            I = get_sprite_for(V[reg]);
+            PC += 2;
+            break;
+        case 0x0033:
+            memory[I + 2] =   V[reg] % 10;
+            memory[I + 1] = ((V[reg] % 100) - (V[reg] % 10)) / 10;
+            memory[I]     =  (V[reg]        - (V[reg] % 100)) / 100;
+            PC += 2;
+            break;
+        case 0x0055:
+            memcpy(&memory[I], &V[0], reg);
+            PC += 2;
+            break;
+        case 0x0065:
+            memcpy(&V[0], &memory[I], reg);
+            PC += 2;
+            break;
+        default:
+            printf("ERROR: Unrecognized opcode!\n");
+            break;
+    }
 }
