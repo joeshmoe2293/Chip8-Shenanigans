@@ -12,9 +12,9 @@
  *    A 0 B F    z x c v
  * */
 static const uint8_t chip8_valid_keys[16] = {
-    '1', '2', '3', 'q',
-    'w', 'e', 'a', 's',
-    'd', 'x', 'z', 'c',
+    'x', '1', '2', '3',
+    'q', 'w', 'e', 'a',
+    's', 'd', 'z', 'c',
     '4', 'r', 'f', 'v'
 };
 

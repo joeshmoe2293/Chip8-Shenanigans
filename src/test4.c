@@ -9,6 +9,7 @@ int main(int argc, char *argv[])
     if (argc > 1) {
         chip8_load(argv[1]);
     }
+
     chip8_deinit();
 
     return 0;

@@ -21,11 +21,11 @@ static uint16_t stack[STACK_SIZE];
 
 // Registers
 static uint8_t  V[NUM_REGS];
-static uint8_t  I;
 static uint8_t  delay;
 static uint8_t  sound;
 static uint16_t PC;
 static uint16_t opcode;
+static uint16_t  I;
 static uint8_t  SP;
 static bool     draw_flag;     
 
@@ -109,6 +109,9 @@ void chip8_load(const char *filename)
         printf("ERROR: Unable to read %ld bytes from file! Aborting...\n", size);
         exit(-1);
     }
+
+    graphics_clear_screen();
+    graphics_refresh_screen();
 }
 
 void chip8_emulate_cycle(void)
@@ -253,7 +256,7 @@ static void process_leading_0(void)
             break;
         case 0x00EE:
             // 0x00EE -> return from subroutine
-            PC = stack[SP--];
+            PC = stack[--SP];
             break;
         default:
             printf("ERROR: Unrecognized opcode!\n");
@@ -427,7 +430,7 @@ static void process_leading_D(void)
     uint8_t reg2 = (opcode & 0x00F0) >> 4;
     uint8_t n    = (opcode & 0x000F);
     // V[F] set if pixels flipped, which is return value of draw_sprite
-    V[0xF] = graphics_draw_sprite(V[reg1], V[reg2], &memory[I], n);
+    V[0xF] = graphics_draw_sprite(V[reg2], V[reg1], &memory[I], n);
     draw_flag = 1;
     PC += 2;
 }

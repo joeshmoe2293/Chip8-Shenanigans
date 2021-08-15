@@ -51,7 +51,6 @@ void graphics_refresh_screen(void)
 void graphics_clear_screen(void)
 {
     memset(screen, 0, sizeof(screen));
-    graphics_refresh_screen();
 }
 
 bool graphics_draw_sprite(uint8_t row, uint8_t col,
