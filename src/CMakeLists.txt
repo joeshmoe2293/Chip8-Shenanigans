@@ -33,3 +33,7 @@ target_compile_options(test3 PRIVATE -Wall -Wextra -pedantic -Werror)
 add_executable(test4 test4.c)
 target_link_libraries(test4 ${CURSES_LIBRARIES} chip8_util chip8_emulator)
 target_compile_options(test4 PRIVATE -Wall -Wextra -pedantic -Werror)
+
+add_executable(test5 test5.c)
+target_link_libraries(test5 ${CURSES_LIBRARIES} chip8_util chip8_emulator)
+target_compile_options(test5 PRIVATE -Wall -Wextra -pedantic -Werror)
