@@ -278,7 +278,7 @@ static void process_leading_2(void)
 static void process_leading_3(void)
 {
     uint8_t reg = (opcode & 0x0F00) >> 8;
-    if (V[reg] == opcode & 0x00FF) {
+    if (V[reg] == (opcode & 0x00FF)) {
         PC += 4;
     } else {
         PC += 2;
@@ -288,7 +288,7 @@ static void process_leading_3(void)
 static void process_leading_4(void)
 {
     uint8_t reg = (opcode & 0x0F00) >> 8;
-    if (V[reg] != opcode & 0x00FF) {
+    if (V[reg] != (opcode & 0x00FF)) {
         PC += 4;
     } else {
         PC += 2;
@@ -392,7 +392,7 @@ static void process_leading_8(void)
 
 static void process_leading_9(void)
 {
-    if (opcode & 0x000F != 0) {
+    if ((opcode & 0x000F) != 0) {
         printf("ERROR: Unrecognized opcode!\n");
         return;
     }
@@ -494,11 +494,11 @@ static void process_leading_F(void)
             PC += 2;
             break;
         case 0x0055:
-            memcpy(&memory[I], &V[0], reg);
+            memcpy(&memory[I], &V[0], reg + 1);
             PC += 2;
             break;
         case 0x0065:
-            memcpy(&V[0], &memory[I], reg);
+            memcpy(&V[0], &memory[I], reg + 1);
             PC += 2;
             break;
         default:
