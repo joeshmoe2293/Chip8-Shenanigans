@@ -18,7 +18,8 @@ int main(int argc, char *argv[])
                 chip8_update_timers();
             }
 
-            if (util_is_key_pressed('k', true)) {
+            if (util_is_key_pressed('k', true) ||
+                chip8_emulation_end_detected()) {
                 break;
             }
         }

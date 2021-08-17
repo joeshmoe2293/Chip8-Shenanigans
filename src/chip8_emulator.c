@@ -25,9 +25,10 @@ static uint8_t  delay;
 static uint8_t  sound;
 static uint16_t PC;
 static uint16_t opcode;
-static uint16_t  I;
+static uint16_t I;
 static uint8_t  SP;
 static bool     draw_flag;     
+static bool     emulation_end_flag;
 
 // Keyboard
 static bool key[NUM_KEYS];
@@ -79,6 +80,10 @@ void chip8_init(void)
     memset(key, 0, sizeof(key));
     memset(key_fifo, 0, sizeof(key_fifo));
     key_fifo_ptr = 0;
+
+    // Flags
+    draw_flag = 0;
+    emulation_end_flag = 0;
 
     setup_sprite_memory();
     graphics_init();
@@ -196,6 +201,11 @@ void chip8_update_timers(void)
     }
 }
 
+bool chip8_emulation_end_detected(void)
+{
+    return emulation_end_flag;
+}
+
 void chip8_deinit(void)
 {
     graphics_deinit();
@@ -260,7 +270,13 @@ static uint8_t get_next_hex_key(void)
         return key_fifo[--key_fifo_ptr];
     }
 
-    return util_get_hex_key();
+    uint8_t key = util_get_hex_key();
+    if (key == (uint8_t)-1) {
+        emulation_end_flag = 1;
+        key = 0;
+    }
+
+    return key;
 }
 
 static void process_leading_0(void)
@@ -375,7 +391,7 @@ static void process_leading_8(void)
             PC += 2;
             break;
         case 0x0005:
-            if (V[reg1] - V[reg2] > V[reg1]) {
+            if (V[reg1] > V[reg2]) {
                 V[0xF] = 1;
             } else {
                 V[0xF] = 0;
@@ -384,22 +400,32 @@ static void process_leading_8(void)
             PC += 2;
             break;
         case 0x0006:
+#if 0
             V[0xF] = V[reg1] & 0x01;
             V[reg1] >>= 1;
+#else
+            V[0xF] = V[reg2] & 0x01;
+            V[reg1] = V[reg2] >> 1;
+#endif
             PC += 2;
             break;
         case 0x0007:
-            if (V[reg2] - V[reg1] > V[reg2]) {
+            if (V[reg2] > V[reg1]) {
                 V[0xF] = 1;
             } else {
                 V[0xF] = 0;
             }
-            V[reg2] = V[reg2] - V[reg1];
+            V[reg1] = V[reg2] - V[reg1];
             PC += 2;
             break;
         case 0x000E:
+#if 0
             V[0xF] = V[reg1] & 0x80;
             V[reg1] <<= 1;
+#else
+            V[0xF] = V[reg2] & 0x80;
+            V[reg1] = V[reg2] << 1;
+#endif
             PC += 2;
             break;
         default:
