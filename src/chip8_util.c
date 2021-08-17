@@ -57,6 +57,11 @@ uint8_t util_get_hex_key(void)
     do {
         pressed_key = util_get_char();
 
+        if (pressed_key == 'k') {
+            pressed_key = (uint8_t)-1;
+            break;
+        }
+
         for (uint8_t i = 0; i < sizeof(chip8_valid_keys); i++) {
             if (pressed_key == chip8_valid_keys[i]) {
                 valid_key = true;

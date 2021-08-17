@@ -25,12 +25,15 @@ static uint8_t  delay;
 static uint8_t  sound;
 static uint16_t PC;
 static uint16_t opcode;
-static uint16_t  I;
+static uint16_t I;
 static uint8_t  SP;
 static bool     draw_flag;     
+static bool     emulation_end_flag;
 
 // Keyboard
 static bool key[NUM_KEYS];
+static uint8_t key_fifo[NUM_KEYS];
+static uint8_t key_fifo_ptr;
 
 // Built-in sprite management
 static void setup_sprite_memory(void);
@@ -38,6 +41,7 @@ static uint16_t get_sprite_for(uint8_t sprite_val);
 
 // Manage key inputs!
 static void update_key_input(void);
+static uint8_t get_next_hex_key(void);
 
 // Handling various opcodes
 static void process_leading_0(void);
@@ -71,6 +75,15 @@ void chip8_init(void)
     PC = 0x200;
     opcode = 0;
     SP = 0;
+
+    // Keyboard
+    memset(key, 0, sizeof(key));
+    memset(key_fifo, 0, sizeof(key_fifo));
+    key_fifo_ptr = 0;
+
+    // Flags
+    draw_flag = 0;
+    emulation_end_flag = 0;
 
     setup_sprite_memory();
     graphics_init();
@@ -188,6 +201,11 @@ void chip8_update_timers(void)
     }
 }
 
+bool chip8_emulation_end_detected(void)
+{
+    return emulation_end_flag;
+}
+
 void chip8_deinit(void)
 {
     graphics_deinit();
@@ -234,15 +252,31 @@ static uint16_t get_sprite_for(uint8_t sprite_val)
 static void update_key_input(void)
 {
     // 16 possible keys
-    for (uint8_t i = 0; i < 0x10; i++) {
+    for (uint8_t i = 0; i < NUM_KEYS; i++) {
         if (util_is_hex_key_pressed(i, false)) {
             key[i] = 1;
+
             // Also consume key
             util_get_char();
-        } else {
-            key[i] = 0;
+
+            key_fifo[key_fifo_ptr++] = i;
         }
     }
+}
+
+static uint8_t get_next_hex_key(void)
+{
+    if (key_fifo_ptr > 0) {
+        return key_fifo[--key_fifo_ptr];
+    }
+
+    uint8_t key = util_get_hex_key();
+    if (key == (uint8_t)-1) {
+        emulation_end_flag = 1;
+        key = 0;
+    }
+
+    return key;
 }
 
 static void process_leading_0(void)
@@ -329,6 +363,7 @@ static void process_leading_8(void)
 {
     uint8_t reg1 = (opcode & 0x0F00) >> 8;
     uint8_t reg2 = (opcode & 0x00F0) >> 4;
+    uint8_t vf_value;
 
     switch (opcode & 0x000F) {
         case 0x0000:
@@ -349,39 +384,52 @@ static void process_leading_8(void)
             break;
         case 0x0004:
             if (V[reg1] + V[reg2] < V[reg1]) {
-                V[0xF] = 1;
+                vf_value = 1;
             } else {
-                V[0xF] = 0;
+                vf_value = 0;
             }
             V[reg1] = V[reg1] + V[reg2];
+            V[0xF] = vf_value;
             PC += 2;
             break;
         case 0x0005:
-            if (V[reg1] - V[reg2] > V[reg1]) {
-                V[0xF] = 1;
+            if (V[reg1] >= V[reg2]) {
+                vf_value = 1;
             } else {
-                V[0xF] = 0;
+                vf_value = 0;
             }
             V[reg1] = V[reg1] - V[reg2];
+            V[0xF] = vf_value;
             PC += 2;
             break;
         case 0x0006:
+#if 0
             V[0xF] = V[reg1] & 0x01;
             V[reg1] >>= 1;
+#else
+            V[0xF] = V[reg2] & 0x01;
+            V[reg1] = V[reg2] >> 1;
+#endif
             PC += 2;
             break;
         case 0x0007:
-            if (V[reg2] - V[reg1] > V[reg2]) {
-                V[0xF] = 1;
+            if (V[reg2] >= V[reg1]) {
+                vf_value = 1;
             } else {
-                V[0xF] = 0;
+                vf_value = 0;
             }
-            V[reg2] = V[reg2] - V[reg1];
+            V[reg1] = V[reg2] - V[reg1];
+            V[0xF] = vf_value;
             PC += 2;
             break;
         case 0x000E:
+#if 0
             V[0xF] = V[reg1] & 0x80;
             V[reg1] <<= 1;
+#else
+            V[0xF] = V[reg2] & 0x80;
+            V[reg1] = V[reg2] << 1;
+#endif
             PC += 2;
             break;
         default:
@@ -444,12 +492,15 @@ static void process_leading_E(void)
             PC += 2;
             if (key[V[reg]]) {
                 PC += 2;
+                key[V[reg]] = 0;
             }
             break;
         case 0x00A1:
             PC += 2;
             if (!key[V[reg]]) {
                 PC += 2;
+            } else {
+                key[V[reg]] = 0;
             }
             break;
         default:
@@ -468,7 +519,7 @@ static void process_leading_F(void)
             PC += 2;
             break;
         case 0x000A:
-            V[reg] = util_get_hex_key();
+            V[reg] = get_next_hex_key();
             PC += 2;
             break;
         case 0x0015:

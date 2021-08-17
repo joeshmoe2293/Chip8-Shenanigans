@@ -7,3 +7,6 @@
 # No object files
 *.o
 build/
+
+# No tag files
+tags
