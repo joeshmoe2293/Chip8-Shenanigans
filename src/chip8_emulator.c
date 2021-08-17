@@ -31,6 +31,8 @@ static bool     draw_flag;
 
 // Keyboard
 static bool key[NUM_KEYS];
+static uint8_t key_fifo[NUM_KEYS];
+static uint8_t key_fifo_ptr;
 
 // Built-in sprite management
 static void setup_sprite_memory(void);
@@ -38,6 +40,7 @@ static uint16_t get_sprite_for(uint8_t sprite_val);
 
 // Manage key inputs!
 static void update_key_input(void);
+static uint8_t get_next_hex_key(void);
 
 // Handling various opcodes
 static void process_leading_0(void);
@@ -71,6 +74,11 @@ void chip8_init(void)
     PC = 0x200;
     opcode = 0;
     SP = 0;
+
+    // Keyboard
+    memset(key, 0, sizeof(key));
+    memset(key_fifo, 0, sizeof(key_fifo));
+    key_fifo_ptr = 0;
 
     setup_sprite_memory();
     graphics_init();
@@ -234,15 +242,25 @@ static uint16_t get_sprite_for(uint8_t sprite_val)
 static void update_key_input(void)
 {
     // 16 possible keys
-    for (uint8_t i = 0; i < 0x10; i++) {
+    for (uint8_t i = 0; i < NUM_KEYS; i++) {
         if (util_is_hex_key_pressed(i, false)) {
             key[i] = 1;
+
             // Also consume key
             util_get_char();
-        } else {
-            key[i] = 0;
+
+            key_fifo[key_fifo_ptr++] = i;
         }
     }
+}
+
+static uint8_t get_next_hex_key(void)
+{
+    if (key_fifo_ptr > 0) {
+        return key_fifo[--key_fifo_ptr];
+    }
+
+    return util_get_hex_key();
 }
 
 static void process_leading_0(void)
@@ -444,12 +462,15 @@ static void process_leading_E(void)
             PC += 2;
             if (key[V[reg]]) {
                 PC += 2;
+                key[V[reg]] = 0;
             }
             break;
         case 0x00A1:
             PC += 2;
             if (!key[V[reg]]) {
                 PC += 2;
+            } else {
+                key[V[reg]] = 0;
             }
             break;
         default:
@@ -468,7 +489,7 @@ static void process_leading_F(void)
             PC += 2;
             break;
         case 0x000A:
-            V[reg] = util_get_hex_key();
+            V[reg] = get_next_hex_key();
             PC += 2;
             break;
         case 0x0015:
