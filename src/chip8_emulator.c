@@ -363,6 +363,7 @@ static void process_leading_8(void)
 {
     uint8_t reg1 = (opcode & 0x0F00) >> 8;
     uint8_t reg2 = (opcode & 0x00F0) >> 4;
+    uint8_t vf_value;
 
     switch (opcode & 0x000F) {
         case 0x0000:
@@ -383,20 +384,22 @@ static void process_leading_8(void)
             break;
         case 0x0004:
             if (V[reg1] + V[reg2] < V[reg1]) {
-                V[0xF] = 1;
+                vf_value = 1;
             } else {
-                V[0xF] = 0;
+                vf_value = 0;
             }
             V[reg1] = V[reg1] + V[reg2];
+            V[0xF] = vf_value;
             PC += 2;
             break;
         case 0x0005:
-            if (V[reg1] > V[reg2]) {
-                V[0xF] = 1;
+            if (V[reg1] >= V[reg2]) {
+                vf_value = 1;
             } else {
-                V[0xF] = 0;
+                vf_value = 0;
             }
             V[reg1] = V[reg1] - V[reg2];
+            V[0xF] = vf_value;
             PC += 2;
             break;
         case 0x0006:
@@ -410,12 +413,13 @@ static void process_leading_8(void)
             PC += 2;
             break;
         case 0x0007:
-            if (V[reg2] > V[reg1]) {
-                V[0xF] = 1;
+            if (V[reg2] >= V[reg1]) {
+                vf_value = 1;
             } else {
-                V[0xF] = 0;
+                vf_value = 0;
             }
             V[reg1] = V[reg2] - V[reg1];
+            V[0xF] = vf_value;
             PC += 2;
             break;
         case 0x000E:
