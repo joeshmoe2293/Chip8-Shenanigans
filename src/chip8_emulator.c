@@ -33,7 +33,8 @@ static bool     emulation_end_flag;
 // Keyboard
 static bool key[NUM_KEYS];
 static uint8_t key_fifo[NUM_KEYS];
-static uint8_t key_fifo_ptr;
+static uint8_t key_fifo_read_ptr;
+static uint8_t key_fifo_write_ptr;
 
 // Built-in sprite management
 static void setup_sprite_memory(void);
@@ -79,7 +80,8 @@ void chip8_init(void)
     // Keyboard
     memset(key, 0, sizeof(key));
     memset(key_fifo, 0, sizeof(key_fifo));
-    key_fifo_ptr = 0;
+    key_fifo_read_ptr = 0;
+    key_fifo_write_ptr = 0;
 
     // Flags
     draw_flag = 0;
@@ -259,21 +261,24 @@ static void update_key_input(void)
             // Also consume key
             util_get_char();
 
-            key_fifo[key_fifo_ptr++] = i;
+            key_fifo[key_fifo_write_ptr++] = i;
+            key_fifo_write_ptr = util_constrain(key_fifo_write_ptr, NUM_KEYS);
         }
     }
 }
 
 static uint8_t get_next_hex_key(void)
 {
-    if (key_fifo_ptr > 0) {
-        return key_fifo[--key_fifo_ptr];
-    }
+    uint8_t key;
 
-    uint8_t key = util_get_hex_key();
-    if (key == (uint8_t)-1) {
-        emulation_end_flag = 1;
-        key = 0;
+    if (key_fifo_read_ptr != key_fifo_write_ptr) {
+        key = key_fifo[key_fifo_read_ptr++];
+        key_fifo_read_ptr = util_constrain(key_fifo_read_ptr, NUM_KEYS);
+    } else {
+        key = util_get_hex_key();
+        if (key == (uint8_t)-1) {
+            emulation_end_flag = 1;
+        }
     }
 
     return key;
