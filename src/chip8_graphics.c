@@ -146,6 +146,49 @@ void graphics_draw_startup(void)
     graphics_refresh_screen();
 }
 
+void graphics_draw_program_state(struct emulator *em)
+{
+    // Move below output window
+    move(32, 0);
+
+    attroff(COLOR_PAIR(1));
+    attroff(COLOR_PAIR(2));
+    attrset(COLOR_PAIR(3));
+
+    // Program registers
+    for (int i = 0; i < NUM_REGS; i++) {
+        printw("V[%X]: 0x%02X\t", i, em->V[i]);
+
+        // Add a newline every 8 registers
+        if ((i + 1) % 8 == 0) {
+            printw("\n");
+        }
+    }
+
+    // PC, opcode, memory register, delay, sound, SP
+    printw("PC: 0x%04X\topcode: 0x%04X\tI: 0x%03X\t"
+           "Delay: %d\tSound: %d\tSP: 0x%X\n",
+           em->PC, em->opcode, em->I,
+           em->delay, em->sound, em->SP);
+
+    // Memory
+    printw("Memory:\n");
+    for (int i = 0; i < 8; i += 2) {
+        printw("0x%04X: %02X %02X\n",
+               em->PC + i,
+               em->memory[em->PC + i],
+               em->memory[em->PC + i + 1]);
+    }
+
+    // Stack trace
+    printw("Stack:\n");
+    for (int i = 0; i < em->SP; i++) {
+        printw("Stack[0x%X]: 0x%03X\n", i, em->stack[i]);
+    }
+
+    attroff(COLOR_PAIR(3));
+}
+
 void graphics_deinit(void)
 {
     endwin();
@@ -155,8 +198,12 @@ static void init_colors(void)
 {
     if (has_colors()) {
         if (start_color() == OK) {
+            // Pixel = 1
             init_pair(1, COLOR_WHITE, COLOR_WHITE);
+            // Pixel = 0
             init_pair(2, COLOR_BLUE, COLOR_BLUE);
+            // Debug info
+            init_pair(3, COLOR_WHITE, COLOR_BLACK);
         }
     } else {
         printf("ERROR: need colors atm!\n");

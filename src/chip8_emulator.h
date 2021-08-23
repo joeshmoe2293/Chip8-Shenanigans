@@ -5,6 +5,7 @@
 
 void chip8_init(void);
 void chip8_load(const char *filename);
+void chip8_display_program_status(void);
 void chip8_emulate_cycle(void);
 void chip8_update_timers(void);
 bool chip8_emulation_end_detected(void);
