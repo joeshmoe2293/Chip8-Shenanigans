@@ -61,6 +61,7 @@ void chip8_load(const char *filename)
 {
     FILE *prog_file = fopen(filename, "rb");
     if (prog_file == NULL) {
+        graphics_deinit();
         printf("ERROR: Unable to open ROM file! Aborting...\n");
         exit(-1);
     }
