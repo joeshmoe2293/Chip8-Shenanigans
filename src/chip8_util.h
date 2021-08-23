@@ -26,6 +26,7 @@ struct emulator {
     // Flags
     bool draw_flag;
     bool emulation_end_flag;
+    bool single_step_flag;
 
     // Keyboard
     bool    key[NUM_KEYS];

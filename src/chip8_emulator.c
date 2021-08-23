@@ -178,6 +178,17 @@ bool chip8_emulation_end_detected(void)
     return em.emulation_end_flag;
 }
 
+bool chip8_single_step_detected(void)
+{
+    // Rather than write a separate function to manually clear this flag, 
+    // *always* clear it after reading its state
+    bool latched_value = em.single_step_flag;
+
+    em.single_step_flag = false;
+
+    return latched_value;
+}
+
 void chip8_deinit(void)
 {
     graphics_deinit();
@@ -246,10 +257,15 @@ static uint8_t get_next_hex_key(void)
         key = em.key_fifo[em.key_fifo_read_ptr++];
         em.key_fifo_read_ptr = util_constrain(em.key_fifo_read_ptr, NUM_KEYS);
     } else {
-        key = util_get_hex_key();
-        if (key == (uint8_t)-1) {
-            em.emulation_end_flag = 1;
-        }
+        do {
+            key = util_get_hex_key();
+            if (key == (uint8_t)-1) {
+                em.emulation_end_flag = 1;
+                break;
+            } else if (key == (uint8_t)-2) {
+                em.single_step_flag = !em.single_step_flag;
+            }
+        } while (key >= NUM_KEYS);
     }
 
     return key;

@@ -60,6 +60,9 @@ uint8_t util_get_hex_key(void)
         if (pressed_key == 'k') {
             pressed_key = (uint8_t)-1;
             break;
+        } else if (pressed_key == 'p') {
+            pressed_key = (uint8_t)-2;
+            break;
         }
 
         for (uint8_t i = 0; i < sizeof(chip8_valid_keys); i++) {

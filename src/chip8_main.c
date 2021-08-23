@@ -14,13 +14,6 @@ int main(int argc, char *argv[])
         bool in_single_step = false;
 
         for (uint32_t cycle = 0; ; cycle++) {
-            if (util_is_key_pressed('k', true) ||
-                chip8_emulation_end_detected()) {
-                break;
-            } else if (util_is_key_pressed('p', true)) {
-                in_single_step = !in_single_step;
-            }
-
             if (in_single_step) {
                 chip8_display_program_status();
 
@@ -43,6 +36,14 @@ int main(int argc, char *argv[])
 
             if ((cycle + 1) % 17 == 0) {
                 chip8_update_timers();
+            }
+
+            if (util_is_key_pressed('k', false) ||
+                chip8_emulation_end_detected()) {
+                break;
+            } else if (util_is_key_pressed('p', true) ||
+                       chip8_single_step_detected()) {
+                in_single_step = true;
             }
         }
     }
