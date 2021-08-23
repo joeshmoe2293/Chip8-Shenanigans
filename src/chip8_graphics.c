@@ -158,6 +158,12 @@ void graphics_draw_program_state(struct emulator *em)
 
     attrset(COLOR_PAIR(3));
 
+    // PC, opcode, memory register, delay, sound, SP
+    printw("PC: 0x%04X\topcode: 0x%04X\tI: 0x%03X\t"
+           "Delay: %d\tSound: %d\tSP: 0x%X\n",
+           em->PC, em->opcode, em->I,
+           em->delay, em->sound, em->SP);
+
     // Program registers
     for (int i = 0; i < NUM_REGS; i++) {
         printw("V[%X]: 0x%02X\t", i, em->V[i]);
@@ -167,12 +173,6 @@ void graphics_draw_program_state(struct emulator *em)
             printw("\n");
         }
     }
-
-    // PC, opcode, memory register, delay, sound, SP
-    printw("PC: 0x%04X\topcode: 0x%04X\tI: 0x%03X\t"
-           "Delay: %d\tSound: %d\tSP: 0x%X\n",
-           em->PC, em->opcode, em->I,
-           em->delay, em->sound, em->SP);
 
     // Memory
     printw("Memory:\n");
