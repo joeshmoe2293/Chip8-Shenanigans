@@ -159,10 +159,9 @@ void graphics_draw_program_state(struct emulator *em)
     attrset(COLOR_PAIR(3));
 
     // PC, opcode, memory register, delay, sound, SP
-    printw("PC: 0x%04X\topcode: 0x%04X\tI: 0x%03X\t"
+    printw("PC: 0x%03X\tI: 0x%03X\t"
            "Delay: %d\tSound: %d\tSP: 0x%X\n",
-           em->PC, em->opcode, em->I,
-           em->delay, em->sound, em->SP);
+           em->PC, em->I, em->delay, em->sound, em->SP);
 
     // Program registers
     for (int i = 0; i < NUM_REGS; i++) {
@@ -170,24 +169,45 @@ void graphics_draw_program_state(struct emulator *em)
 
         // Add a newline every 8 registers
         if ((i + 1) % 8 == 0) {
-            printw("\n");
+            addch('\n');
         }
     }
 
     // Memory
     printw("Memory:\n");
-    for (int i = 0; i < 8; i += 2) {
-        printw("0x%04X: %02X %02X\n",
-               em->PC + i,
-               em->memory[em->PC + i],
-               em->memory[em->PC + i + 1]);
+    for (uint16_t addr = em->PC - 4; addr < em->PC + 10; addr += 2) {
+        // Print next instruction in bold
+        if (addr == em->PC) {
+            attrset(A_BOLD);
+        }
+
+        // Don't print if beyond edge of memory
+        if (addr > 0 && addr < MEMORY_SIZE) {
+            printw("0x%03X: %02X %02X\t",
+                   addr, em->memory[addr], em->memory[addr + 1]);
+        }
+
+        // Disable bold printing
+        if (addr == em->PC) {
+            attroff(A_BOLD);
+        }
     }
 
+    addch('\n');
+
     // Stack trace
-    printw("Stack:\n");
     for (int i = 0; i < em->SP; i++) {
-        printw("Stack[0x%X]: 0x%03X\n", i, em->stack[i]);
+        // Don't print if beyond stack's end
+        if (i < STACK_SIZE) {
+            printw("Stack[0x%X]: 0x%03X\t", i, em->stack[i]);
+        }
+
+        if ((i + 1) % 4 == 0) {
+            addch('\n');
+        }
     }
+
+    addch('\n');
 
     attroff(COLOR_PAIR(3));
 }
