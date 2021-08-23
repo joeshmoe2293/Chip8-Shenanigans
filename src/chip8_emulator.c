@@ -99,6 +99,11 @@ void chip8_display_program_status(void)
     graphics_draw_program_state(&em);
 }
 
+void chip8_clear_program_status(void)
+{
+    graphics_clear_program_state();
+}
+
 void chip8_emulate_cycle(void)
 {
     em.opcode = em.memory[em.PC] << 8 | em.memory[em.PC + 1];

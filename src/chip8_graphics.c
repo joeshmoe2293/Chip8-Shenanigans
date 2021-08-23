@@ -8,8 +8,9 @@
 #include "chip8_graphics.h"
 #include "chip8_util.h"
 
-#define ROW_COUNT 32
-#define COL_COUNT 64
+#define ROW_COUNT        32
+#define COL_COUNT        64
+#define SPACES_PER_PIXEL 2
 
 static uint8_t screen[ROW_COUNT][COL_COUNT];
 
@@ -17,6 +18,7 @@ static void init_colors(void);
 static void set_pixel(bool pixel_on);
 static void draw_word_sprite(uint8_t row, uint8_t col,
                              uint8_t *sprite, uint8_t num_letters);
+static void clear_debug_row(uint8_t row, uint8_t num_rows);
 
 void graphics_init(void)
 {
@@ -148,11 +150,12 @@ void graphics_draw_startup(void)
 
 void graphics_draw_program_state(struct emulator *em)
 {
-    // Move below output window
-    move(32, 0);
+    // Clear any previous debug text in debug window
+    clear_debug_row(ROW_COUNT, 32);
 
-    attroff(COLOR_PAIR(1));
-    attroff(COLOR_PAIR(2));
+    // Move below output window
+    move(ROW_COUNT, 0);
+
     attrset(COLOR_PAIR(3));
 
     // Program registers
@@ -189,6 +192,22 @@ void graphics_draw_program_state(struct emulator *em)
     attroff(COLOR_PAIR(3));
 }
 
+void graphics_clear_program_state(void)
+{
+    // Clear all debug info
+    clear_debug_row(ROW_COUNT, 32);
+
+    // Move outside output window
+    move(ROW_COUNT, 0);
+
+    // Print resuming then overwrite other info
+    attrset(COLOR_PAIR(3));
+
+    printw("Resuming...");
+
+    attroff(COLOR_PAIR(3));
+}
+
 void graphics_deinit(void)
 {
     endwin();
@@ -204,6 +223,8 @@ static void init_colors(void)
             init_pair(2, COLOR_BLUE, COLOR_BLUE);
             // Debug info
             init_pair(3, COLOR_WHITE, COLOR_BLACK);
+            // Cleared info
+            init_pair(4, COLOR_BLACK, COLOR_BLACK);
         }
     } else {
         printf("ERROR: need colors atm!\n");
@@ -213,17 +234,24 @@ static void init_colors(void)
 
 static void set_pixel(bool pixel_on)
 {
+    // Set right color
     if (pixel_on) {
-        attroff(COLOR_PAIR(2));
         attrset(COLOR_PAIR(1));
     } else {
-        attroff(COLOR_PAIR(1));
         attrset(COLOR_PAIR(2));
     }
 
     // Two spaces -> more square-like
-    addch(' ');
-    addch(' ');
+    for (int i = 0; i < SPACES_PER_PIXEL; i++) {
+        addch(' ');
+    }
+
+    // Clear for setting next pixels
+    if (pixel_on) {
+        attroff(COLOR_PAIR(1));
+    } else {
+        attroff(COLOR_PAIR(2));
+    }
 }
 
 static void draw_word_sprite(uint8_t row, uint8_t col,
@@ -235,4 +263,20 @@ static void draw_word_sprite(uint8_t row, uint8_t col,
         // r -> move forward rows in sprite bytes to get next letter
         graphics_draw_sprite(row, col + c, sprite + r, 5);
     }
+}
+
+static void clear_debug_row(uint8_t row, uint8_t num_rows)
+{
+    attrset(COLOR_PAIR(4));
+
+    for (int r = row; r < row + num_rows; r++) {
+        move(r, 0);
+
+        // Overwrite debug text with black spaces
+        for (int c = 0; c < COL_COUNT * SPACES_PER_PIXEL; c++) {
+            addch(' ');
+        }
+    }
+
+    attroff(COLOR_PAIR(4));
 }

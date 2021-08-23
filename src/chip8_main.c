@@ -17,7 +17,8 @@ int main(int argc, char *argv[])
             if (in_single_step) {
                 chip8_display_program_status();
 
-                // Wait until 'i' pressed to continue
+                // Wait until step (i) / resume (p) / end (k)
+                // pressed before continuing
                 uint8_t key;
                 do {
                     key = util_get_char();
@@ -27,6 +28,7 @@ int main(int argc, char *argv[])
                     break;
                 } else if (key == 'p') {
                     in_single_step = false;
+                    chip8_clear_program_status();
                 } // else key == i -> single step continue
             }
 

@@ -14,6 +14,7 @@ bool graphics_draw_sprite(uint8_t row, uint8_t col,
                           uint8_t *sprite, uint8_t num_bytes);
 void graphics_draw_startup(void);
 void graphics_draw_program_state(struct emulator *em);
+void graphics_clear_program_state(void);
 void graphics_deinit(void);
 
 #endif
